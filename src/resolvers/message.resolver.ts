@@ -13,9 +13,10 @@ import RepoService from 'src/repo.service'
 import MessageInput, { DeleteMessageInput } from './input/message.input'
 import { PubSub } from 'graphql-subscriptions'
 
-const pubSub = new PubSub()
+const MESSAGE_ADDED_EVENT_NAME = 'messageAdded'
 
-@Resolver(() => Message)
+export const pubSub = new PubSub()
+@Resolver((of) => Message)
 export default class MessageResolver {
 	constructor(private readonly repoService: RepoService) {}
 
@@ -49,7 +50,13 @@ export default class MessageResolver {
 			userId: input.userId,
 		})
 
-		return this.repoService.messageRepo.save(message)
+		const response = await this.repoService.messageRepo.save(message)
+
+		pubSub.publish(MESSAGE_ADDED_EVENT_NAME, {
+			[MESSAGE_ADDED_EVENT_NAME]: message,
+		})
+
+		return response
 	}
 
 	@Mutation(() => Message)
@@ -71,10 +78,10 @@ export default class MessageResolver {
 		return copy
 	}
 
-	// @Subscription(() => Message)
-	// messageAdded() {
-	// 	return pubSub.asyncIterator('messageAdded')
-	// }
+	@Subscription(() => Message)
+	messageAdded() {
+		return pubSub.asyncIterator(MESSAGE_ADDED_EVENT_NAME)
+	}
 
 	@ResolveField(() => User, { name: 'user' })
 	public async getUser(@Parent() parent): Promise<User> {
