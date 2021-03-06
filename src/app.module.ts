@@ -17,6 +17,7 @@ const gqlImports = [UserResolver, MessageResolver]
 		RepoModule,
 		...gqlImports,
 		GraphQLModule.forRoot({
+			// autoSchemaFile: 'schema.gpl',
 			autoSchemaFile: true,
 			playground: true,
 			installSubscriptionHandlers: true,
